@@ -1,14 +1,13 @@
 package com.epam.autotasks.collections;
-
+//this one
 import java.util.*;
-
 class IntStringCappedMap extends AbstractMap<Integer, String> {
+
     private LinkedHashMap<Integer, String> map = new LinkedHashMap(); //
     private final long capacity;
     public long currentCapacity;
 
     public IntStringCappedMap(final long capacity) {
-
         this.capacity = capacity;
         currentCapacity = capacity;
     }
@@ -17,35 +16,39 @@ class IntStringCappedMap extends AbstractMap<Integer, String> {
         return capacity;
     }
 
-    @Override
-    public Set<Entry<Integer, String>> entrySet() {
-        return new AbstractSet<>() {
+@Override
+public Set<Entry<Integer, String>> entrySet() {
+    return new AbstractSet<>() {
+        @Override
+        public Iterator<Entry<Integer, String>> iterator() {
+            return new Iterator<>() {
+                Iterator<Entry<Integer, String>> value = map.entrySet().iterator();
+                @Override
+                public boolean hasNext() {
+                    return value.hasNext();
+                }
 
-            AbstractSet<Integer> abs_set = new TreeSet<>();
-            Iterator value = abs_set.iterator();
-
-            @Override
-            public Iterator<Entry<Integer, String>> iterator() {
-                return new Iterator<>() {
-                    @Override
-                    public boolean hasNext() {
-                        //implement this method
-                        return value.hasNext();
+                @Override
+                public Entry<Integer, String> next() {
+                    if (value.hasNext())
+                    {
+                        return value.next();
                     }
-                    @Override
-                    public Entry<Integer, String> next() {
-                        //implement this method
-                        return (Entry<Integer, String>) value.next();
+                    else
+                    {
+                        throw new NoSuchElementException();
                     }
-                };
-            }
 
-            @Override
-            public int size() {
-                return IntStringCappedMap.this.size();
-            }
-        };
-    }
+                }
+            };
+        }
+
+        @Override
+        public int size() {
+            return IntStringCappedMap.this.size();
+        }
+    };
+}
 
     @Override
     public String get(final Object key) {
@@ -56,29 +59,40 @@ class IntStringCappedMap extends AbstractMap<Integer, String> {
     @Override
     public String put(final Integer key, final String value) {
         //implement this method
-        if (value.length() > capacity){ throw new IllegalArgumentException(); }
-        else if (value.length() > currentCapacity)
+        String oldValue = map.remove(key);
+        if(oldValue != null)
         {
-            while (currentCapacity < value.length())
-            {
-                for (Map.Entry me : map.entrySet())
-                {
-                    currentCapacity += (me.getValue().toString()).length();
-                    map.remove(me.getKey());
+            currentCapacity += oldValue.length();
+        }
+        if(capacity == 20)
+        {
+            System.out.println(key + " : " + value + " // " + currentCapacity);
+        }
+
+        if (value.length() > capacity) {
+            throw new IllegalArgumentException();
+        } else if (value.length() > currentCapacity)
+        {
+                Iterator<Map.Entry<Integer, String>> iterator = entrySet().iterator();
+                Map.Entry<Integer, String> entry = null;
+                while (currentCapacity < value.length() && iterator.hasNext()) {
+                    entry = iterator.next();
+                    remove(entry.getKey());
                 }
-            }
         }
-        if (map.containsKey(key))
-        {
-            map.remove(key);
-        }
+
         currentCapacity -= value.length();
-        return map.put(key, value);
+        String newValue = map.put(key, value);
+        return oldValue == null ? newValue : oldValue;//map.put(key, value);
     }
 
     @Override
     public String remove(final Object key) {
         //implement this method
+        if(map.containsKey(key))
+        {
+            currentCapacity += get(key).length();
+        }
         return map.remove(key);
     }
 
@@ -87,18 +101,3 @@ class IntStringCappedMap extends AbstractMap<Integer, String> {
         //implement this method
         return map.size();
     }
-
-    public static void main(String[] args) {
-        IntStringCappedMap map = new IntStringCappedMap(25);
-        map.put(5, "Five");
-        map.put(6, "Six");
-        map.put(7, "Seven");
-        map.put(8, "Eight");
-        map.put(12, "Twelve");
-        map.put(9, "Nine");
-        map.put(1, "One");
-
-        System.out.println(new TreeMap<>(map));
-    }
-
-}
